@@ -12,7 +12,6 @@ def get_default_params():
     params = {
         "cameras"    : [1, 2, 3, 4, 5, 6, 7, 8],
         "videoParts" : [9, 9, 9, 9, 9, 8, 8, 9],
-        "ffmpegPath" : 'ffmpeg',
         "data"       : {
             "ground_truth"         : [
                 "trainval.mat",
@@ -110,6 +109,28 @@ def download_from_dict(dataType, data, dest, params, verbose=False):
         urllib.urlretrieve(url, fileName)
 
 
+def extract_video(dest, params):
+    if dest == ".":
+        dest = os.getcwd()
+
+    for cam in range(0, len(params["cameras"])):
+        fileName = os.path.join(dest, 'videos', 'camera{}'.format(cam+1))
+        filelist = '"concat:00000.MTS';
+
+        for k in range (0, params["videoParts"][cam]):
+            filelist = '{}|0000{}.MTS'.format(filelist, k+1)
+
+        # framesDir = os.path.join(dest, 'frames', 'camera{}'.format(cam+1), '%d.jpg')
+        # command = 'ffmpeg -i {}" -qscale:v 1 -f image2 {}'.format(filelist, framesDir)
+
+        framesDir = os.path.join(dest, 'frames', 'camera{}.mp4'.format(cam+1))
+        command = 'ffmpeg -y -i {}" -qscale:v 1 -framerate 30 -vcodec libx264 {}'.format(filelist, framesDir)
+
+        os.chdir(fileName)
+        os.system(command)
+
+
+
 def getDataset(dest='.', json=None, verbose=False):
     params = get_default_params()
 
@@ -118,22 +139,26 @@ def getDataset(dest='.', json=None, verbose=False):
 
     if verbose: print("Patience, this may take 1-2 days!")
 
-    if verbose: print('Creating folder structure...')
-    create_folder(dest, len(params["cameras"]))
+    # if verbose: print('Creating folder structure...')
+    # create_folder(dest, len(params["cameras"]))
+    #
+    # if verbose: print("Downloading data...")
+    # data = params["data"]
+    # for key in data.keys():
+    #     value = data[key]
+    #     if not value == []:
+    #         if verbose: print("... Downloading {}".format(key))
+    #         if type(value) == list:
+    #             download_from_list(key, value, dest, verbose)
+    #
+    #         if type(value) == dict:
+    #             download_from_dict(key, value, dest, params, verbose)
 
-    if verbose: print("Downloading data...")
-    data = params["data"]
-    for key in data.keys():
-        value = data[key]
-        if not value == []:
-            if verbose: print("... Downloading {}".format(key))
-            if type(value) == list:
-                download_from_list(key, value, dest, verbose)
+    if verbose: print('Data download complete, now the extraction!')
 
-            if type(value) == dict:
-                download_from_dict(key, value, dest, params, verbose)
+    extract_video(dest, params)
 
-    if verbose: print('Data download complete!')
+    if verbose: print('Data extraction complete!')
 
 
 if __name__ == '__main__':
