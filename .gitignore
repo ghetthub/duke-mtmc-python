@@ -1,2 +1,5 @@
 # Ignore whichever folder created
 */
+
+# Matlab source file
+script.m
